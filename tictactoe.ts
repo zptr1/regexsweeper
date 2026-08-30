@@ -104,16 +104,6 @@ function generateTree(board: string[], turn: string) {
   }
 }
 
-function encodeStates(states: string[]) {
-  regex.push(
-    `(?=${
-      states
-        .map((x) => x.match(/.../g)!.join("\\n"))
-        .join("|")
-    })`
-  );
-}
-
 generateTree(new Array(9).fill(EMPTY), X);
 console.log("Generated", statesForO.size, "possible states for O and", winStates.size, "win states");
 
@@ -129,7 +119,13 @@ for (const [state, move] of statesForO) {
 function play(groups: string[][]) {
   regex.push("(?:");
   for (let move = 0; move < groups.length; move++) {
-    encodeStates(groups[move]);
+    regex.push(
+      `(?=${
+        groups[move]
+          .map((x) => x.match(/.../g)!.join("\\n"))
+          .join("|")
+      })`
+    );
   
     const idx = move + Math.floor(move / 3);
     if (idx > 0) addKeptGroup(`[\\s\\S]{${idx}}`);
