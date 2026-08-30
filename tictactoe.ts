@@ -103,7 +103,10 @@ for (const [state, move] of statesForO) {
   moveGroups[move].push(state);
 }
 
-regex.push("^[^y]+y\\n\\n(?:");
+regex.push("^");
+addKeptGroup("[^v]+v\\n\\n");
+regex.push("(?:");
+
 for (let move = 0; move < moveGroups.length; move++) {
   const states = moveGroups[move];
 
