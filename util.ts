@@ -8,6 +8,9 @@ export type Group = { re: string; group: string };
 export let groupId = 0;
 export const getGroupId = () => `g${++groupId}`;
 
+let width = 0;
+let height = 0;
+
 export function group(re: string): Group {
   const n = getGroupId();
   return {
@@ -20,7 +23,12 @@ export function array2d<T>(w: number, h: number, fill: T): T[][] {
   return Array.from({ length: w }, () => new Array(h).fill(fill));
 }
 
-export function iter2d(width: number, height: number, fn: (x: number, y: number) => void, rowFn?: (x: number) => void) {
+export function setBoardSize(w: number, h: number) {
+  width = w;
+  height = h;
+}
+
+export function iter2d(fn: (x: number, y: number) => void, rowFn?: (x: number) => void) {
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
       fn(x, y);
@@ -30,7 +38,7 @@ export function iter2d(width: number, height: number, fn: (x: number, y: number)
   }
 }
 
-export function iterNeighbors(width: number, height: number, x: number, y: number, fn: (dx: number, dy: number) => void) {
+export function iterNeighbors(x: number, y: number, fn: (dx: number, dy: number) => void) {
   for (let dx = x - 1; dx <= x + 1; dx++)
   for (let dy = y - 1; dy <= y + 1; dy++) {
     if (dx >= 0 && dy >= 0 && dx < width && dy < height) {
@@ -83,4 +91,19 @@ export function matchNChars(char: string, n: number) {
   if (n == 0) return "";
   if (n < 5) return char.repeat(n);
   return `${char}{${n}}`;
+}
+
+export function point2idx(x: number, y: number) {
+  return x * (width + 1) + y;
+}
+
+export function matchPoint(x: number, y: number) {
+  const idx = point2idx(x, y);
+  if (idx > width) return `[\\s\\S]{${idx}}`;
+  if (idx > 0) return `.{${idx}}`;
+  return "";
+}
+
+export function matchAnyPoint(points: Point[]) {
+  return `(?:${points.map(([x, y]) => matchPoint(x, y)).join("|")})`;
 }
