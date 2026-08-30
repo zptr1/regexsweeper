@@ -1,7 +1,7 @@
 import {
   addGroup, addKeptGroup, addNewGroup, addReplacer, array2d, buildRegex, getGroupId,
   groupId, iter2d, iterNeighbors, matchAnyPoint, matchDigits, matchLetter, matchLetters,
-  matchNChars, matchPoint, output, Point, point2idx, printOutput, regex, replacer, setBoardSize
+  matchNChars, matchPoint, output, Point, point2idx, printOutput, regex, setBoardSize
 } from "./util";
 
 const width = Number(process.argv[2]);
@@ -14,6 +14,7 @@ if (!width || !height || !mineCount) {
   process.exit(1);
 }
 
+// Generate the minesweeper board
 setBoardSize(width, height);
 
 const mines = array2d(width, height, 0);
@@ -32,6 +33,7 @@ for (let i = mineCount; i; ) {
   i--;
 }
 
+// Group all digits together
 const countGroups = new Map<number, Point[]>();
 
 iter2d((x, y) => {
@@ -42,6 +44,10 @@ iter2d((x, y) => {
   group.push([x, y]);
 });
 
+// Identify all groups of zeroes using flood fill
+// This is used for revealing 0s:
+//   when 'x' is in any point from `zeroes`, it matches all `points`
+//   and replaces them with proper numbers to reveal them
 const visited = new Set<number>();
 const zeroAreas: { zeroes: Point[], points: Point[] }[] = [];
 
@@ -80,6 +86,7 @@ iter2d((x, y) => {
   zeroAreas.push({ zeroes, points });
 });
 
+// Opening safe cells (with 1 to 8 neighbors)
 function openCell() {
   regex.push("^");
   addKeptGroup("[^v]+v\\n\\n");
@@ -103,6 +110,7 @@ function openCell() {
   addKeptGroup("[\\s\\S]*$");
 }
 
+// Opening a mine
 function lossDetection() {
   regex.push("^(?:");
   const Y = matchLetter("y");
@@ -136,6 +144,7 @@ function lossDetection() {
   );
 }
 
+// Opening a safe cell with 0 neighboring mines
 function openZeroes() {
   regex.push("^");
   addKeptGroup("[^v]+v\\n\\n");
@@ -196,15 +205,18 @@ function openZeroes() {
   addKeptGroup("[\\s\\S]*$");
 }
 
+// Board is fully revealed
 function winDetection() {
   regex.push("^");
+
   const B = matchLetter("b");
   const Y = addNewGroup("y");
-  const SPACE = addNewGroup(" ");
+  const _ = addNewGroup(" ");
   const YUI_DEV = addNewGroup("yui.dev");
   regex.push("\\n\\n(?:");
-  let lastChar = "", count = 0;
 
+  // bit of "obfuscation" to make it less obvious when you look at the regex
+  let lastChar = "", count = 0;
   const push = () => {
     if (lastChar && count) {
       regex.push(lastChar);
@@ -228,6 +240,7 @@ function winDetection() {
     push();
     regex.push("\\n");
   });
+
   push();
 
   const O = matchLetter("o");
@@ -239,18 +252,17 @@ function winDetection() {
   regex.push(".");
   const C = addNewGroup("c");
 
-  const R = matchLetter("r");
-  const T = matchLetter("t");
+  const [R, T] = matchLetters("rt");
   regex.push(".");
   const W = addNewGroup("w");
-  const U = matchLetter("u");
-  const D = matchLetter("d");
+  const [U, D, COLON, THREE, EXCLAMATION] = matchLetters("ud:3!");
 
-  const COLON = matchLetter(":");
-  const THREE = matchLetter("3");
-  const EXCLAMATION = matchLetter("!");
+  addReplacer(
+    Y, O, U, _, W, O, N, EXCLAMATION, _,
+    C, R, E, A, T, E, D, _, B, Y, _, YUI_DEV, _,
+    COLON, THREE
+  );
 
-  addReplacer(Y, O, U, SPACE, W, O, N, EXCLAMATION, SPACE, C, R, E, A, T, E, D, SPACE, B, Y, SPACE, YUI_DEV, SPACE, COLON, THREE);
   regex.push(")");
 }
 
