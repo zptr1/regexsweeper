@@ -1,3 +1,9 @@
+import {
+  addGroup, addKeptGroup, addNewGroup, addReplacer, array2d, getGroupId,
+  groupId, iter2d, iterNeighbors, matchDigits, matchLetter, matchLetters,
+  matchNChars, output, Point, regex, replacer
+} from "./util";
+
 const width = Number(process.argv[2]);
 const height = Number(process.argv[3]);
 const mineCount = Number(process.argv[4]);
@@ -6,94 +12,6 @@ if (!width || !height || !mineCount) {
   console.error("Usage: <width> <height> <mineCount>");
   console.log("Example: 8 8 7");
   process.exit(1);
-}
-
-const regex: string[] = [];
-const replacer: string[] = [];
-const output: string[] = [];
-
-type Point = [number, number];
-type Group = { re: string; group: string };
-
-let id = 0;
-
-const getGroupId = () => `g${++id}`;
-
-function group(re: string): Group {
-  const n = getGroupId();
-  return {
-    re: `(?<${n}>${re})`,
-    group: `$<${n}>`,
-  };
-}
-
-function array2d<T>(w: number, h: number, fill: T): T[][] {
-  return Array.from({ length: w }, () => new Array(h).fill(fill));
-}
-
-function iter2d(fn: (x: number, y: number) => void, rowFn?: (x: number) => void) {
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y++) {
-      fn(x, y);
-    }
-
-    if (rowFn) rowFn(x);
-  }
-}
-
-function iterNeighbors(x: number, y: number, fn: (dx: number, dy: number) => void) {
-  for (let dx = x - 1; dx <= x + 1; dx++)
-  for (let dy = y - 1; dy <= y + 1; dy++) {
-    if (dx >= 0 && dy >= 0 && dx < width && dy < height) {
-      fn(dx, dy);
-    }
-  }
-}
-
-function addNewGroup(re: string) {
-  const g = group(re);
-  addGroup(g);
-  return g;
-}
-
-function addGroup(...re: (string | Group)[]) {
-  for (const r of re) {
-    regex.push(typeof r == "string" ? r : r.re);
-  }
-}
-
-function addReplacer(...re: (string | Group)[]) {
-  for (const r of re) {
-    replacer.push(typeof r == "string" ? r : r.group);
-  }
-}
-
-function addKeptGroup(re: string) {
-  addReplacer(addNewGroup(re));
-}
-
-function matchLetter(letter: string) {
-  regex.push(`[^${letter}]*`);
-  return addNewGroup(letter);
-}
-
-function matchLetters(text: string) {
-  return [...text].map(matchLetter);
-}
-
-function matchDigits(largestDigit: number) {
-  const digits: Group[] = [];
-  for (let i = 0; i <= largestDigit; i++) {
-    digits[i] = addNewGroup(`${i}`);
-  }
-
-  return digits;
-}
-
-function matchNChars(char: string, n: number) {
-  if (n == 0) return "";
-  if (n < 5) return char.repeat(n);
-  return `${char}{${n}}`;
 }
 
 const mines = array2d(width, height, 0);
@@ -109,13 +27,17 @@ for (let i = mineCount; i; ) {
   mines[x][y] = 1;
   mineList.push([x, y]);
 
-  iterNeighbors(x, y, (dx, dy) => board[dx][dy]++);
+  iterNeighbors(
+    width, height, x, y,
+    (dx, dy) => board[dx][dy]++
+  );
+
   i--;
 }
 
 const countGroups = new Map<number, Point[]>();
 
-iter2d((x, y) => {
+iter2d(width, height, (x, y) => {
   if (mines[x][y]) return;
   
   const value = board[x][y];
@@ -126,7 +48,7 @@ iter2d((x, y) => {
 const visited = new Set<number>();
 const zeroAreas: { zeroes: Point[], points: Point[] }[] = [];
 
-iter2d((x, y) => {
+iter2d(width, height, (x, y) => {
   const idx = x * width + y;
 
   if (board[x][y] != 0 || visited.has(idx)) return;
@@ -142,7 +64,7 @@ iter2d((x, y) => {
     const [cx, cy] = queue.shift()!;
     zeroes.push([cx, cy]);
 
-    iterNeighbors(cx, cy, (dx, dy) => {
+    iterNeighbors(width, height, cx, cy, (dx, dy) => {
       const idx = dx * width + dy;
       if (board[dx][dy] == 0) {
         if (!visited.has(idx)) {
@@ -227,6 +149,7 @@ function lossDetection() {
   addReplacer(Y, O, U, SPACE, L, O, S, T, EXCLAMATION, NEWLINE, NEWLINE);
 
   iter2d(
+    width, height,
     (x, y) => addReplacer(mines[x][y] ? BOMB : DIGIT[board[x][y]]),
     () => addReplacer(NEWLINE)
   );
@@ -282,8 +205,7 @@ function openZeroes() {
       else addReplacer(digits[board[x][y]]);
     }
 
-    addReplacer(rest);
-    replacer.push(`$<${digitGroup}>`);
+    addReplacer(rest, `$<${digitGroup}>`);
 
     regex.push("|");
   }
@@ -311,7 +233,7 @@ function winDetection() {
     }
   };
 
-  iter2d((x, y) => {
+  iter2d(width, height, (x, y) => {
     if (mines[x][y]) {
       push();
       regex.push("[_fF]");
@@ -374,12 +296,12 @@ output.push(
   `There are ${mineCount}*!`,
 );
 
-console.log(id, "groups");
+console.log(groupId, "groups");
 
 let outRegex = regex.join("");
 let outReplacer = replacer.join("");
 
-if (id < 100) {
+if (groupId < 100) {
   outRegex = outRegex.replace(/\?<g\d+>/g, "");
   outReplacer = outReplacer.replace(/[g<>]/g, "");
 } else {
