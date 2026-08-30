@@ -1,10 +1,12 @@
-import { addKeptGroup, addNewGroup, addReplacer, buildRegex, groupId, iter2d, output, Point, printOutput, regex } from "./util";
+import { addKeptGroup, addNewGroup, addReplacer, buildRegex, groupId, iter2d, matchLetter, matchLetters, output, Point, printOutput, regex } from "./util";
 
 const X = "X";
 const O = "O";
 const EMPTY = "_";
 
 const statesForO = new Map<string, number>();
+const winStates = new Set<string>();
+
 const visited = new Set<string>();
 
 function getWinner(board: string[]): string | undefined {
@@ -84,7 +86,14 @@ function generateTree(board: string[], turn: string) {
     if (bestMove == -1) throw-1;
 
     board[bestMove] = O;
-    generateTree(board, X);
+  
+    const winner = getWinner(board);
+    if (winner == O) {
+      winStates.add(state);
+    } else {
+      generateTree(board, X);
+    }
+
     board[bestMove] = EMPTY;
   } else for (let i = 0; i < 9; i++) {
     if (board[i] != EMPTY) continue;
@@ -95,21 +104,7 @@ function generateTree(board: string[], turn: string) {
   }
 }
 
-generateTree(new Array(9).fill(EMPTY), X);
-console.log("Generated", statesForO.size, "possible states");
-
-const moveGroups: string[][] = Array.from({ length: 9 }, () => []);
-for (const [state, move] of statesForO) {
-  moveGroups[move].push(state);
-}
-
-regex.push("^");
-addKeptGroup("[^v]+v\\n\\n");
-regex.push("(?:");
-
-for (let move = 0; move < moveGroups.length; move++) {
-  const states = moveGroups[move];
-
+function encodeStates(states: string[]) {
   regex.push(
     `(?=${
       states
@@ -117,31 +112,72 @@ for (let move = 0; move < moveGroups.length; move++) {
         .join("|")
     })`
   );
-
-  const idx = move + Math.floor(move / 3);
-
-  if (idx > 0) addKeptGroup(`[\\s\\S]{${idx}}`);
-  regex.push(EMPTY);
-  const rest = addNewGroup("[^:]+: ");
-  const O = addNewGroup("O");
-
-  addReplacer(O, rest, O);
-  addKeptGroup("[\\s\\S]*$");
-
-  regex.push("|");
 }
 
-regex.pop();
+generateTree(new Array(9).fill(EMPTY), X);
+console.log("Generated", statesForO.size, "possible states for O and", winStates.size, "win states");
+
+// this is shitty but i dont care this is a PoC anyway!!!
+const mk = (): string[][] => Array.from({ length: 9 }, () => []);
+const moveGroups = mk();
+const winGroups = mk();
+
+for (const [state, move] of statesForO) {
+  (winStates.has(state) ? winGroups : moveGroups)[move].push(state);
+}
+
+function play(groups: string[][]) {
+  regex.push("(?:");
+  for (let move = 0; move < groups.length; move++) {
+    encodeStates(groups[move]);
+  
+    const idx = move + Math.floor(move / 3);
+    if (idx > 0) addKeptGroup(`[\\s\\S]{${idx}}`);
+
+    regex.push("|");
+  }
+  
+  regex.pop();
+  regex.push(")");
+  regex.push(EMPTY);
+  
+  regex.push("(?=[^:]+: ");
+  const UpO = addKeptGroup("O");
+  regex.push(")");
+
+  return UpO;
+}
+
+function winDetection() {
+  const UpO = play(winGroups);
+
+  addKeptGroup("[^P]+");
+  const [N, _, W, O, EXCLAMATION] = matchLetters("n wo!");
+
+  addReplacer(UpO, _, W, O, N, EXCLAMATION);
+}
+
+addKeptGroup("^[^v]+v\\n\\n");
+regex.push("(?:");
+
+play(moveGroups);
+regex.push("|");
+winDetection();
+
 regex.push(")");
 
-output.push("Regex Tic Tac Toe by yui.dev");
-output.push("");
-output.push("___");
-output.push("___");
-output.push("___");
-output.push("");
-output.push("Playing against: O");
-output.push("Replace a cell with X and run the regex to play!");
+addKeptGroup("[\\s\\S]*$");
+
+output.push(
+  "Regex Tic Tac Toe by yui.dev",
+  "",
+  "___",
+  "___",
+  "___",
+  "",
+  "Playing against: O",
+  "Replace a cell with X and run the regex to make a move!"
+);
 
 console.log(groupId, "groups");
 printOutput(buildRegex());

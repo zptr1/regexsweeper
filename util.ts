@@ -66,7 +66,9 @@ export function addReplacer(...re: (string | Group)[]) {
 }
 
 export function addKeptGroup(re: string) {
-  addReplacer(addNewGroup(re));
+  const group = addNewGroup(re);
+  addReplacer(group);
+  return group;
 }
 
 export function matchLetter(letter: string) {
@@ -127,7 +129,7 @@ export function buildRegex() {
 }
 
 export function printOutput(out: ReturnType<typeof buildRegex>) {
-  console.log(`\n\x1b[1m\nRegex:\x1b[0m`);
+  console.log(`\x1b[1m\nRegex:\x1b[0m`);
   console.log(`\x1b[33m${out.regex}\x1b[0m`);
   console.log(`\x1b[1m\nReplacer:\x1b[0m`);
   console.log(`\x1b[33m${out.replacer}\x1b[0m`);
