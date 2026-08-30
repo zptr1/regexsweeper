@@ -157,12 +157,28 @@ function winDetection() {
   addReplacer(UpO, _, W, O, N, EXCLAMATION);
 }
 
+function tieDetection() {
+  addKeptGroup("[^_P]+");
+  regex.push("P.");
+
+  const A = addNewGroup("a"); regex.push(".");
+  const I = addNewGroup("i");
+  const S = matchLetter("s");
+  const T = addNewGroup("t"); regex.push(".");
+  const _ = addNewGroup(" ");
+  const [E, EXCLAMATION] = matchLetters("e!");
+
+  addReplacer(I, T, S, _, A, _, T, I, E, EXCLAMATION);
+}
+
 addKeptGroup("^[^v]+v\\n\\n");
 regex.push("(?:");
 
 play(moveGroups);
 regex.push("|");
 winDetection();
+regex.push("|");
+tieDetection();
 
 regex.push(")");
 
