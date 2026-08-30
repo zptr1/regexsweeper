@@ -107,3 +107,31 @@ export function matchPoint(x: number, y: number) {
 export function matchAnyPoint(points: Point[]) {
   return `(?:${points.map(([x, y]) => matchPoint(x, y)).join("|")})`;
 }
+
+export function buildRegex() {
+  let outRegex = regex.join("");
+  let outReplacer = replacer.join("");
+
+  if (groupId < 100) {
+    outRegex = outRegex.replace(/\?<g\d+>/g, "");
+    outReplacer = outReplacer.replace(/[g<>]/g, "");
+  } else {
+    console.warn("100+ groups used. This will use named groups which are not supported in some places");
+  }
+
+  return {
+    regex: outRegex,
+    replacer: outReplacer,
+    output: output.join("\n")
+  };
+}
+
+export function printOutput(out: ReturnType<typeof buildRegex>) {
+  console.log(`\n\x1b[1m\nRegex:\x1b[0m`);
+  console.log(`\x1b[33m${out.regex}\x1b[0m`);
+  console.log(`\x1b[1m\nReplacer:\x1b[0m`);
+  console.log(`\x1b[33m${out.replacer}\x1b[0m`);
+  console.log(`\x1b[1m\nText:\x1b[0m`);
+  console.log(`\x1b[32m${out.output}\x1b[0m`);
+  console.log("\x1b[0;2m\n-----------\x1b[0m");
+}

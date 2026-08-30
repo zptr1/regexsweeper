@@ -1,7 +1,7 @@
 import {
-  addGroup, addKeptGroup, addNewGroup, addReplacer, array2d, getGroupId,
+  addGroup, addKeptGroup, addNewGroup, addReplacer, array2d, buildRegex, getGroupId,
   groupId, iter2d, iterNeighbors, matchAnyPoint, matchDigits, matchLetter, matchLetters,
-  matchNChars, matchPoint, output, Point, point2idx, regex, replacer, setBoardSize
+  matchNChars, matchPoint, output, Point, point2idx, printOutput, regex, replacer, setBoardSize
 } from "./util";
 
 const width = Number(process.argv[2]);
@@ -9,7 +9,7 @@ const height = Number(process.argv[3]);
 const mineCount = Number(process.argv[4]);
 
 if (!width || !height || !mineCount) {
-  console.error("Usage: <width> <height> <mineCount>");
+  console.error("Usage: <width> <height> <mineCount> [--show-board]");
   console.log("Example: 8 8 7");
   process.exit(1);
 }
@@ -278,24 +278,8 @@ output.push(
 );
 
 console.log(groupId, "groups");
+printOutput(buildRegex());
 
-let outRegex = regex.join("");
-let outReplacer = replacer.join("");
-
-if (groupId < 100) {
-  outRegex = outRegex.replace(/\?<g\d+>/g, "");
-  outReplacer = outReplacer.replace(/[g<>]/g, "");
-} else {
-  console.log("100+ groups used. This will use named groups which are not supported in some places");
+if (process.argv.includes("--show-board")) {
+  console.log(board.map((a,x) => a.map((b,y)=>mines[x][y]?"_":b).join("")).join("\n"));
 }
-
-console.log("\x1b[0;1m\nRegex:\x1b[0m");
-console.log("\x1b[0;33m"+outRegex+"\x1b[0m");
-console.log("\x1b[0;1m\nReplacer:\x1b[0m");
-console.log("\x1b[0;33m"+outReplacer+"\x1b[0m");
-console.log("\x1b[0;1m\nText:\x1b[0m");
-console.log("\x1b[0;32m"+output.join("\n")+"\x1b[0m");
-console.log();
-console.log("\x1b[0;2m-----------\x1b[0m");
-if (process.argv.includes("--show-board"))
-console.log(board.map((a,x) => a.map((b,y)=>mines[x][y]?"_":b).join("")).join("\n"));
