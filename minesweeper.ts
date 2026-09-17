@@ -4,8 +4,9 @@ import {
   matchNChars, matchPoint, output, Point, point2idx, printOutput, regex, setBoardSize
 } from "./util";
 
-const width = Number(process.argv[2]);
-const height = Number(process.argv[3]);
+// i cba to flip them properly lol
+const height = Number(process.argv[2]);
+const width = Number(process.argv[3]);
 const mineCount = Number(process.argv[4]);
 
 if (!width || !height || !mineCount) {
@@ -57,7 +58,7 @@ const visited = new Set<number>();
 const zeroAreas: { zeroes: Point[], points: Point[] }[] = [];
 
 iter2d((x, y) => {
-  const idx = x * width + y;
+  const idx = point2idx(x, y);
 
   if (board[x][y] != 0 || visited.has(idx)) return;
   visited.add(idx);
@@ -73,7 +74,7 @@ iter2d((x, y) => {
     zeroes.push([cx, cy]);
 
     iterNeighbors(cx, cy, (dx, dy) => {
-      const idx = dx * width + dy;
+      const idx = point2idx(dx, dy);
       if (board[dx][dy] == 0) {
         if (!visited.has(idx)) {
           visited.add(idx);
@@ -263,8 +264,8 @@ openZeroes();
 output.push("RegexSweeper by yui.dev");
 output.push("");
 
-for (let y = 0; y < height; y++) {
-  output.push("_".repeat(width));
+for (let x = 0; x < width; x++) {
+  output.push("_".repeat(height));
 }
 
 output.push(

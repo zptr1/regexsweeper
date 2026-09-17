@@ -96,12 +96,12 @@ export function matchNChars(char: string, n: number) {
 }
 
 export function point2idx(x: number, y: number) {
-  return x * (width + 1) + y;
+  return x * (height + 1) + y;
 }
 
 export function matchPoint(x: number, y: number, matcher="\\s\\S") {
   const idx = point2idx(x, y);
-  if (idx > width) return `[${matcher}]{${idx}}`;
+  if (idx > height) return `[${matcher}]{${idx}}`;
   if (idx > 0) return `.{${idx}}`;
   return "";
 }
