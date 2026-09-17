@@ -155,13 +155,19 @@ function openZeroes() {
   for (const area of zeroAreas) {
     regex.push(`(?=${matchAnyPoint(area.zeroes, "^:")}x)`);
 
-    const branch: any[] = [];
     let lastIdx = -1;
     let largestDigit = 0;
+    let count = 0;
+    
+    for (const [x, y] of area.points) {
+      largestDigit = Math.max(largestDigit, board[x][y]);
+    }
+
+    regex.push(`(?=[^:]+: `);
+    const digits = matchDigits(largestDigit);
+    regex.push(")");
 
     area.points.sort((a, b) => point2idx(...a) - point2idx(...b));
-
-    let count = 0;
 
     for (const [x, y] of area.points) {
       const idx = point2idx(x, y);
@@ -171,34 +177,16 @@ function openZeroes() {
         regex.push(matchNChars(".", count));
         count = 0;
 
-        branch.push({ skip: addNewGroup(`[^:]{${gap}}`) });
+        addKeptGroup(`[^:]{${gap}}`);
       }
 
       count++;
-      branch.push({ x, y });
-      largestDigit = Math.max(largestDigit, board[x][y]);
-
-      if (mines[x][y]) throw `something went wrong`;
+      addReplacer(digits[board[x][y]]);
 
       lastIdx = idx;
     }
 
     regex.push(matchNChars(".", count));
-
-    const rest = addNewGroup("[^:]+: ");
-
-    const digitGroup = getGroupId();
-    regex.push(`(?<${digitGroup}>`);
-    const digits = matchDigits(largestDigit);
-    regex.push(")");
-
-    for (const { skip, x, y } of branch) {
-      if (skip) addReplacer(skip);
-      else addReplacer(digits[board[x][y]]);
-    }
-
-    addReplacer(rest, `$<${digitGroup}>`);
-
     regex.push("|");
   }
 
