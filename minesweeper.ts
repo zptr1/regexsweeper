@@ -14,6 +14,11 @@ if (!width || !height || !mineCount) {
   process.exit(1);
 }
 
+if (mineCount > width * height) {
+  console.error("Invalid mine count");
+  process.exit(1);
+}
+
 // Generate the minesweeper board
 setBoardSize(width, height);
 
@@ -95,13 +100,10 @@ function openCell() {
   for (const [count, coords] of countGroups) {
     if (count == 0) continue;
 
-    addKeptGroup(coords.map(([x, y]) => matchPoint(x, y)).join("|"));
-    addGroup("x");
-  
-    const copy = addNewGroup(`[^:]+[^${count}]+`);
-    const digit = addNewGroup(`${count}`);
-  
-    addReplacer(digit, copy, digit);
+    addKeptGroup(coords.map(([x, y]) => matchPoint(x, y, "^:")).join("|"));
+    regex.push(`x(?=[^:]+[^${count}]+`);
+    addKeptGroup(`${count}`);
+    regex.push(")");
     regex.push("|");
   }
   
@@ -117,7 +119,7 @@ function lossDetection() {
   regex.push("[^v]+v\\n");
   const NEWLINE = addNewGroup("\\n");
 
-  regex.push(`(?=${matchAnyPoint(mineList)}x)`);
+  regex.push(`(?=${matchAnyPoint(mineList, "^:")}x)`);
   
   const [O, L, T, U, S] = matchLetters("oltus");
   const SPACE = addNewGroup(" ");
@@ -151,7 +153,7 @@ function openZeroes() {
   regex.push("(?:");
 
   for (const area of zeroAreas) {
-    regex.push(`(?=${matchAnyPoint(area.zeroes)}x)`);
+    regex.push(`(?=${matchAnyPoint(area.zeroes, "^:")}x)`);
 
     const branch: any[] = [];
     let lastIdx = -1;
@@ -227,15 +229,11 @@ function winDetection() {
   };
 
   iter2d((x, y) => {
-    if (mines[x][y]) {
-      push();
-      regex.push("[_fF]");
-    } else {
-      const ch = `${board[x][y]}`;
-      if (lastChar != ch) push();
-      lastChar = ch;
-      count++;
-    }
+    const char = mines[x][y] ? "[_fF]" : `${board[x][y]}`;
+    if (lastChar != char) push();
+
+    lastChar = char;
+    count++;
   }, () => {
     push();
     regex.push("\\n");

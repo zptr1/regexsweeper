@@ -99,15 +99,15 @@ export function point2idx(x: number, y: number) {
   return x * (width + 1) + y;
 }
 
-export function matchPoint(x: number, y: number) {
+export function matchPoint(x: number, y: number, matcher="\\s\\S") {
   const idx = point2idx(x, y);
-  if (idx > width) return `[\\s\\S]{${idx}}`;
+  if (idx > width) return `[${matcher}]{${idx}}`;
   if (idx > 0) return `.{${idx}}`;
   return "";
 }
 
-export function matchAnyPoint(points: Point[]) {
-  return `(?:${points.map(([x, y]) => matchPoint(x, y)).join("|")})`;
+export function matchAnyPoint(points: Point[], matcher = "\\s\\S") {
+  return `(?:${points.map(([x, y]) => matchPoint(x, y, matcher)).join("|")})`;
 }
 
 export function buildRegex() {
