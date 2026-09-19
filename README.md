@@ -4,13 +4,13 @@
 
 Read [my blog post](https://yui.dev/blog/minesweeper-in-regex) to understand how this works!
 
-You can try it out on the [online demo](https://yui.dev/-/regexsweeper).
+You can try it out on [this online demo](https://yui.dev/-/regexsweeper).
 
 # Contents
 
 ## Minesweeper
 
-The minesweeper board & replacement pattern is baked into the regex. Run [`minesweeper.ts`](./minesweeper.ts) to generate a game:
+The random minesweeper board is baked into the regex. Run [`minesweeper.ts`](./minesweeper.ts) to generate a random game:
 ```sh
 # Usage: <width> <height> <mine count>
 $ bun minesweeper.ts 15 10 20
@@ -28,4 +28,4 @@ You can take the regex from [this file](examples/tictactoe.txt), or run [`tictac
 
 ## API
 
-[`util.ts`](./util.ts) contains some simple tools to simplify generating regexes. Its not great, but It Works™, and its better than doing everything manually
+[`util.ts`](./util.ts) contains some simple tools to simplify generating regexes. Its not great, but It Works™, and its better than doing everything manually.
